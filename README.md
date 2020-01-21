@@ -1,3 +1,5 @@
+# Light presets for Home Assistant
+
 Easily set default colors and brightness of your lights based on time of the day or any other factor.
 
 # Overview
@@ -15,6 +17,7 @@ It integrates with hass light service seamlessly, so that all existing automatio
  - Define multiple presets containing mulitple lights.
  - Presets can be easily modified from other automations. Eg. changing light preset based on time of the day is straightforward.
  - Presets are defined in `input_select` so they can be easily changed using default hass UI.
+ - Turn on / off all lights defined in the preset.
 
 # Setup
 
@@ -118,4 +121,10 @@ Just update corresponding `input_select`. Eg:
 
 ## Turning on the lights
 
-Use built in `light.turn_on` service.
+- Use built in `light.turn_on` service to turn on a single entity
+- Use `light_presets.light_on` or `light_presets.light_off` to turn off a group of lights, eg:
+``` yaml
+service: light_presets.light_on
+  data:
+    light_group: bedroom
+```
