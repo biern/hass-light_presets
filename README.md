@@ -31,18 +31,24 @@ git clone https://github.com/biern/hass-light_presets.git custom_components/ligh
 
 ``` yaml
 light_presets:
-  kitchen:
+  living_room:
     preset: input_select.living_room_preset
     lights:
-      - light.kitchen_ceiling
+      - light.living_room_top_a
+      - light.living_room_top_b
+      - light.living_room_top_c
     presets:
       day:
         defaults:
           brightness: 255
           kelvin: 6500
       ambient:
+        light.living_room_top_b:
+          state: "off"
+        light.living_room_top_c:
+          state: "off"
         defaults:
-          brightness: 50
+          brightness: 130
           kelvin: 3100
       evening:
         defaults:
@@ -75,6 +81,21 @@ light_presets:
           state: "off"
         light.bedroom_c:
           state: "off"
+
+input_select:
+  bedroom_preset:
+    icon: mdi:brightness-4
+    options:
+      - Day
+      - Evening
+      - Night
+
+  living_room_preset:
+    icon: mdi:brightness-4
+    options:
+      - Day
+      - Evening
+      - Ambient
 ```
 
 # Integrating with automations
