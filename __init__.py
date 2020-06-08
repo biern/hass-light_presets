@@ -95,7 +95,7 @@ async def service_light_on(hass, light_groups, call):
 
     _LOGGER.debug("Lights %s", group["lights"])
 
-    await group_lights_turn_on(hass, group)
+    await group_lights_turn_on(hass, group, call.data)
 
 
 async def service_light_off(hass, light_groups, call):
@@ -219,11 +219,14 @@ async def group_lights_update(hass, group):
             await turn_on_light(hass, light, attributes)
 
 
-async def group_lights_turn_on(hass, group):
+async def group_lights_turn_on(hass, group, service_params={}):
     for light in group["lights"]:
         settings = get_light_settings(hass, group, light)
         attributes = settings["attributes"]
         meta = settings["meta"]
+
+        if 'preset_brightness_pct' in service_params:
+            attributes['brightness'] = attributes.get('brightness', 255) * service_params['preset_brightness_pct'] / 100
 
         if meta["state"] != "off":
             await turn_on_light(hass, light, attributes)
