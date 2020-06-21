@@ -11,7 +11,10 @@ from homeassistant.const import (
     EVENT_CALL_SERVICE,
     EVENT_SERVICE_REGISTERED,
 )
-from homeassistant.components.light import LIGHT_TURN_ON_SCHEMA
+from homeassistant.components.light import (
+    LIGHT_TURN_ON_SCHEMA,
+    preprocess_turn_on_alternatives,
+)
 from homeassistant.core import callback, ServiceCall
 import homeassistant.helpers.config_validation as cv
 
@@ -184,14 +187,21 @@ async def turn_on_override(hass, light_groups, light_turn_on, event):
 
         _LOGGER.debug("Adding turn on default attributes %s", attributes)
 
-        updated_data = types.MappingProxyType({**attributes, **event.data,})
+        event_data = {
+            **event.data,
+            **attributes,
+        }
+        _LOGGER.debug("New event attributes %s", event_data)
 
-        event = ServiceCall(
-            domain=event.domain,
-            service=event.service,
-            data=updated_data,
-            context=event.context,
-        )
+    else:
+        event_data = event.data
+
+    event = ServiceCall(
+        domain=event.domain,
+        service=event.service,
+        data=preprocess_data({**event_data}),
+        context=event.context,
+    )
 
     await light_turn_on.func(event)
 
@@ -200,15 +210,13 @@ async def group_lights_update(hass, group):
     anything_on = is_anything_on(hass, group)
 
     for light in group["lights"]:
-        light_state = hass.states.get(light).state
-
         settings = get_light_settings(hass, group, light)
         attributes = settings["attributes"]
         meta = settings["meta"]
 
-        _LOGGER.debug("Updateing light %s using settings %s", light, settings)
+        _LOGGER.debug("Updating light %s using settings %s", light, settings)
 
-        if light_state == STATE_ON:
+        if is_light_on(hass, light):
             if meta["state"] == "off":
                 await turn_off_light(hass, light)
             else:
@@ -247,7 +255,12 @@ async def turn_off_light(hass, light):
 
 
 def is_anything_on(hass, group):
-    return any(hass.states.get(light).state == STATE_ON for light in group["lights"])
+    return any(is_light_on(hass, light) for light in group["lights"])
+
+def is_light_on(hass, light):
+    light_state = hass.states.get(light)
+
+    return light_state and light_state.state == STATE_ON
 
 
 def get_group_attributes(hass, group):
@@ -302,3 +315,17 @@ class LightGroupsConfig:
         for group in self._config.values():
             if light in group["lights"]:
                 return group
+
+"""
+Copied from light service
+"""
+def preprocess_data(data):
+    """Preprocess the service data."""
+    base = {
+        entity_field: data.pop(entity_field)
+        for entity_field in cv.ENTITY_SERVICE_FIELDS
+        if entity_field in data
+    }
+
+    base["params"] = preprocess_turn_on_alternatives(data)
+    return base
