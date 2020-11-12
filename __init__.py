@@ -203,7 +203,7 @@ async def turn_on_override(hass, light_groups, light_turn_on, event):
         context=event.context,
     )
 
-    await light_turn_on.func(event)
+    await light_turn_on.job.target(event)
 
 
 async def group_lights_update(hass, group):
