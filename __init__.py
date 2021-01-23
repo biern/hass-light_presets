@@ -199,7 +199,7 @@ async def turn_on_override(hass, light_groups, light_turn_on, event):
     event = ServiceCall(
         domain=event.domain,
         service=event.service,
-        data=preprocess_data({**event_data}),
+        data=preprocess_data(hass, {**event_data}),
         context=event.context,
     )
 
@@ -245,6 +245,7 @@ async def group_lights_turn_off(hass, group):
 
 
 async def turn_on_light(hass, light, attributes):
+    _LOGGER.debug("turn on attributes %s", attributes)
     await hass.services.async_call(
         "light", "turn_on", {"entity_id": light, **attributes,}
     )
@@ -319,7 +320,7 @@ class LightGroupsConfig:
 """
 Copied from light service
 """
-def preprocess_data(data):
+def preprocess_data(hass, data):
     """Preprocess the service data."""
     base = {
         entity_field: data.pop(entity_field)
@@ -327,5 +328,6 @@ def preprocess_data(data):
         if entity_field in data
     }
 
-    base["params"] = preprocess_turn_on_alternatives(data)
+    preprocess_turn_on_alternatives(hass, data)
+    base["params"] = data
     return base
