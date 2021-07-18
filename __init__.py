@@ -225,6 +225,13 @@ async def group_lights_update(hass, group):
             meta["state"] == "on_if_anything_on" and anything_on
         ):
             await turn_on_light(hass, light, attributes)
+        elif meta["state"] == "no_change":
+            if meta["update_if_off"] == "flicker":
+                _LOGGER.debug("Light flicker on %s using settings %s", light, attributes)
+                await turn_on_light(hass, light, attributes)
+                await asyncio.sleep(3)
+                _LOGGER.debug("Light flicker off %s using settings %s", light, attributes)
+                await turn_off_light(hass, light)
 
 
 async def group_lights_turn_on(hass, group, service_params={}):
@@ -281,6 +288,7 @@ def get_light_settings(hass, group, entity_id):
 
     meta = {
         "state": merged.pop("state", DEFAULT_STATE),
+        "update_if_off": merged.pop("update_if_off", False),
     }
 
     return {
